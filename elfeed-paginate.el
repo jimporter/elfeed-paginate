@@ -24,7 +24,7 @@
 
 ;;; Commentary:
 
-;; Elfeed-Paginate adds the ability to retrieve multiple pages of results for
+;; elfeed-paginate adds the ability to retrieve multiple pages of results for
 ;; a web feed.  Currently, it only supports pagination of WordPress feeds by
 ;; default.
 
@@ -48,7 +48,7 @@ Elfeed will use the first non-nil result. If the result is a
 symbol, this means that there is no next page."
   :type 'hook)
 
-(defun elfeed-paginate-next-page-url-wordpress (url xml)
+(defun elfeed-paginate-next-page-url-wordpress (url xml _feed)
   (when-let ((generator (xml-query* (rss channel generator *) xml))
              (genurl (url-generic-parse-url generator))
              ((string= (url-host genurl) "wordpress.org")))
@@ -64,11 +64,12 @@ symbol, this means that there is no next page."
                                           (url-build-query-string query)))
       (url-recreate-url urlobj))))
 
-(defun elfeed-paginate-next-page-url (url xml)
+(defun elfeed-paginate-next-page-url (url xml feed)
   "Return the next page of the feed for URL.
-XML is the current page's XML as an S-expr."
+XML is the current page's XML as an S-expr.  FEED is the Elfeed
+feed object."
   (let ((url (run-hook-with-args-until-success
-              'elfeed-paginate-next-page-url-hook url xml)))
+              'elfeed-paginate-next-page-url-hook url xml feed)))
     (when (stringp url) url)))
 
 (defmacro elfeed-paginate-with-fetch (url last-modified etag &rest body)
@@ -91,7 +92,13 @@ of `elfeed-use-curl'."
        (url-queue-retrieve ,url cb () t t))))
 
 (defun elfeed-paginate--update-feed (feed url &optional since depth)
-  "Update a specific feed."
+  "Update a specific FEED.
+URL is the URL to fetch (possibly a subsequent page for the
+feed).  If non-nil, SINCE should be the `:last-modified' value for
+the feed, in string form.  DEPTH increases by one for each nested
+call to this function; it will continue calling itself for the
+next page until it finds a post older than SINCE, runs out of
+posts, or DEPTH reaches `elfeed-paginate-max-pages'."
   (setq depth (or depth 1))
   (elfeed-paginate-with-fetch url since
                               (when (= depth 1) (elfeed-meta feed :etag))
@@ -128,9 +135,10 @@ of `elfeed-use-curl'."
                 (if-let (entries
                            ((< depth elfeed-paginate-max-pages))
                            ((or (null since)
-                                (< since (elfeed-entry-date
-                                          (car (last entries))))))
-                           (next-url (elfeed-paginate-next-page-url url xml)))
+                                (< (elfeed-float-time since)
+                                   (elfeed-entry-date (car (last entries))))))
+                           (next-url (elfeed-paginate-next-page-url
+                                      url xml feed)))
                     (elfeed-paginate--update-feed
                      feed next-url since (1+ depth))
                   (run-hook-with-args 'elfeed-update-hooks url)))))
@@ -150,7 +158,10 @@ of `elfeed-use-curl'."
 (defun elfeed-paginate ()
   "Initialize Elfeed pagination."
   (elfeed-log 'info "elfeed-paginate enabled")
-  (advice-add #'elfeed-update-feed :override #'elfeed-paginate-update-feed))
+  (advice-add 'elfeed-update-feed :override #'elfeed-paginate-update-feed))
+
+(defun elfeed-paginate-unload-function ()
+  (advice-remove 'elfeed-update-feed #'elfeed-paginate-update-feed))
 
 (provide 'elfeed-paginate)
 ;;; elfeed-paginate.el ends here
