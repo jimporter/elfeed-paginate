@@ -1,0 +1,4 @@
+*.elc
+/.deps
+/elfeed-paginate-autoloads.el
+/elfeed-paginate-pkg.el
