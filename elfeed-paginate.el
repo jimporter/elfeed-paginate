@@ -91,17 +91,19 @@ of `elfeed-use-curl'."
            (elfeed-curl-enqueue ,url cb :headers headers))
        (url-queue-retrieve ,url cb () t t))))
 
-(defun elfeed-paginate--update-feed (feed url &optional since depth)
+(defun elfeed-paginate--update-feed (feed url &optional since etag depth)
   "Update a specific FEED.
 URL is the URL to fetch (possibly a subsequent page for the
-feed).  If non-nil, SINCE should be the `:last-modified' value for
-the feed, in string form.  DEPTH increases by one for each nested
-call to this function; it will continue calling itself for the
-next page until it finds a post older than SINCE, runs out of
-posts, or DEPTH reaches `elfeed-paginate-max-pages'."
+feed).  If non-nil, SINCE should be the `:last-modified' value
+for the feed, in string form.  Similarly, if non-nil, ETAG should
+be the `:etag' value for the feed.
+
+DEPTH increases by one for each nested call to this function; it
+will continue calling itself for the next page until it finds a
+post older than SINCE, runs out of posts, or DEPTH reaches
+`elfeed-paginate-max-pages'."
   (setq depth (or depth 1))
-  (elfeed-paginate-with-fetch url since
-                              (when (= depth 1) (elfeed-meta feed :etag))
+  (elfeed-paginate-with-fetch url since etag
     (if (elfeed-is-status-error status use-curl)
         (let ((print-escape-newlines t))
           (elfeed-handle-http-error
@@ -139,8 +141,10 @@ posts, or DEPTH reaches `elfeed-paginate-max-pages'."
                                    (elfeed-entry-date (car (last entries))))))
                            (next-url (elfeed-paginate-next-page-url
                                       url xml feed)))
+                    ;; Update the next page of the feed; never send the etag,
+                    ;; since that's only for the newest page.
                     (elfeed-paginate--update-feed
-                     feed next-url since (1+ depth))
+                     feed next-url since nil (1+ depth))
                   (run-hook-with-args 'elfeed-update-hooks url)))))
         (error (elfeed-handle-parse-error url error))))
     (unless use-curl
@@ -152,7 +156,20 @@ posts, or DEPTH reaches `elfeed-paginate-max-pages'."
   (unless elfeed--inhibit-update-init-hooks
     (run-hooks 'elfeed-update-init-hooks))
   (let ((feed (elfeed-db-get-feed url)))
-    (elfeed-paginate--update-feed feed url (elfeed-meta feed :last-modified))))
+    (elfeed-paginate--update-feed feed url (elfeed-meta feed :last-modified)
+                                  (elfeed-meta feed :etag))))
+
+(defun elfeed-paginate-backfill (url &optional pages)
+  "Backfill a specific feed.
+PAGES (interactively, the prefix arg) is the maximum number of
+pages to backfill."
+  (interactive (list (completing-read "Feed: " (elfeed-feed-list))
+                     (prefix-numeric-value current-prefix-arg)))
+  (let ((elfeed-paginate-max-pages (or pages elfeed-paginate-max-pages))
+        (feed (elfeed-db-get-feed url)))
+    (unless elfeed--inhibit-update-init-hooks
+      (run-hooks 'elfeed-update-init-hooks))
+    (elfeed-paginate--update-feed feed url)))
 
 ;;;###autoload
 (defun elfeed-paginate ()

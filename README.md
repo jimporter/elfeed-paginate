@@ -3,7 +3,7 @@
 **elfeed-paginate** adds the ability to retrieve multiple pages of results for a
 web feed. Currently, it only supports pagination of WordPress feeds.
 
-## Initial setup
+## Configuration
 
 To enable pagination for feeds, simply call `elfeed-paginate`. If you use
 `use-package`, you can configure it like so:
@@ -14,13 +14,23 @@ To enable pagination for feeds, simply call `elfeed-paginate`. If you use
   :config (elfeed-paginate))
 ```
 
-## Customization
+You can customize the number of pages to retrieve for feeds by setting
+`elfeed-paginate-max-pages` (the default is 5).
 
-To add support for a new style of pagination, you can add a new entry to
-`elfeed-paginate-next-page-url-hook`. Each entry should take the URL that was
+### Supporting more feeds
+
+To add support for a new style of pagination, add a new function to
+`elfeed-paginate-next-page-url-hook`. This function should take the URL that was
 just fetched, its XML, and the Elfeed feed object. Elfeed will use the first
-non-nil result. If the result is a symbol, this means that there is no next
-page.
+non-nil result from this hook. If that result is a symbol, this means that there
+is no next page.
+
+## Backfilling
+
+For existing feeds, you can backfill several pages of results using
+`elfeed-paginate-backfill`. By default, this will fetch at most
+`elfeed-paginate-max-pages`; with a prefix argument, fetch at most that many
+pages instead.
 
 ## License
 
