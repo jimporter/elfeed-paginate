@@ -1,0 +1,28 @@
+name: build
+on:
+  pull_request:
+  push:
+  schedule:
+    - cron: '0 0 1 * *'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        emacs-version: ['29.1', '29.2', '29.3', 'snapshot']
+        action: ['lint']
+
+      fail-fast: false
+
+    steps:
+      - uses: actions/checkout@v3
+      - uses: purcell/setup-emacs@master
+        with:
+          version: ${{ matrix.emacs-version }}
+      - name: Install dependencies
+        run: |
+          make install-deps
+      - name: Run ${{ matrix.action }}
+        run: |
+          make ${{ matrix.action }}
