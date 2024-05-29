@@ -25,8 +25,8 @@
 ;;; Commentary:
 
 ;; elfeed-paginate adds the ability to retrieve multiple pages of results for
-;; a web feed.  Currently, it only supports pagination of WordPress feeds by
-;; default.
+;; a web feed.  Currently, it supports pagination using RFC 5005 links and
+;; for WordPress feeds.
 
 ;;; Code:
 
