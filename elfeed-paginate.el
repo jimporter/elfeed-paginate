@@ -41,17 +41,28 @@
   :type 'natnum)
 
 (defcustom elfeed-paginate-next-page-url-hook
-  '(elfeed-paginate-next-page-url-wordpress)
+  '(elfeed-paginate-next-page-url-link-rel
+    elfeed-paginate-next-page-url-wordpress)
   "A list of functions to get the \"next\" page for a feed URL.
 Each function should take the current page's URL and its XML.
 Elfeed will use the first non-nil result. If the result is a
 symbol, this means that there is no next page."
   :type 'hook)
 
-(defun elfeed-paginate-next-page-url-wordpress (url xml _feed)
-  (when-let ((generator (xml-query* (rss channel generator *) xml))
-             (genurl (url-generic-parse-url generator))
-             ((string= (url-host genurl) "wordpress.org")))
+(defun elfeed-paginate-next-page-url-link-rel (_url xml _feed)
+  "Get the next page of the feed using RFC 5005.
+This is a <link> tag, with a rel of either \"prev-archive\" or \"next\"."
+  (or (xml-query '((feed rss) link [rel "prev-archive"] :href) xml)
+      (xml-query '((feed rss) link [rel "next"] :href) xml)))
+
+(defun elfeed-paginate-next-page-url-wordpress (url xml feed)
+  "Get the next page of a WordPress feed.
+This detects WordPress feeds via the <generator> tag or the
+`:generator' meta key on the Elfeed feed object."
+  (when (or (eq (elfeed-meta feed :generator) 'wordpress)
+            (when-let ((generator (xml-query* (rss channel generator *) xml))
+                       (genurl (url-generic-parse-url generator)))
+              (string= (url-host genurl) "wordpress.org")))
     (let* ((urlobj (url-generic-parse-url url))
            (path-and-query (url-path-and-query urlobj))
            (query (when (cdr path-and-query)
