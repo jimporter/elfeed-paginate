@@ -11,7 +11,7 @@ jobs:
     strategy:
       matrix:
         emacs-version: ['29.1', '29.2', '29.3', 'snapshot']
-        action: ['lint']
+        action: ['check', 'lint']
 
       fail-fast: false
 
