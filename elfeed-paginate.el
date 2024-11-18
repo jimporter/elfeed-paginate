@@ -174,8 +174,9 @@ post older than SINCE, runs out of posts, or DEPTH reaches
   "Backfill a specific feed.
 PAGES (interactively, the prefix arg) is the maximum number of
 pages to backfill."
-  (interactive (list (completing-read "Feed: " (elfeed-feed-list))
-                     (prefix-numeric-value current-prefix-arg)))
+  (interactive
+   (list (completing-read "Feed: " (elfeed-feed-list))
+         (when current-prefix-arg (prefix-numeric-value current-prefix-arg))))
   (let ((elfeed-paginate-max-pages (or pages elfeed-paginate-max-pages))
         (feed (elfeed-db-get-feed url)))
     (unless elfeed--inhibit-update-init-hooks
