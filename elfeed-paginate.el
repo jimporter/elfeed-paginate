@@ -136,6 +136,7 @@ post older than SINCE, runs out of posts, or DEPTH reaches
                   (setf (elfeed-meta feed :canonical-url)
                         elfeed-curl-location)))
               (let* ((feed-id (elfeed-feed-id feed))
+                     (original-title (elfeed-feed-title feed))
                      (xml (elfeed-xml-parse-region (point) (point-max)))
                      (entries
                       (cl-case (elfeed-feed-type xml)
@@ -144,6 +145,8 @@ post older than SINCE, runs out of posts, or DEPTH reaches
                         (:rss1.0 (elfeed-entries-from-rss1.0 feed-id xml))
                         (otherwise (error (elfeed-handle-parse-error
                                            url "Unknown feed type."))))))
+                (when (> depth 1)
+                  (setf (elfeed-feed-title feed) original-title))
                 (elfeed-db-add entries)
                 (if-let (entries
                            ((< depth elfeed-paginate-max-pages))
