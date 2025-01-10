@@ -62,7 +62,7 @@ This detects WordPress feeds via the <generator> tag or the
   (when (or (eq (elfeed-meta feed :generator) 'wordpress)
             (when-let ((generator (xml-query* (rss channel generator *) xml))
                        (genurl (url-generic-parse-url generator)))
-              (string= (url-host genurl) "wordpress.org")))
+              (member (url-host genurl) '("wordpress.com" "wordpress.org"))))
     (let* ((urlobj (url-generic-parse-url url))
            (path-and-query (url-path-and-query urlobj))
            (query (when (cdr path-and-query)
