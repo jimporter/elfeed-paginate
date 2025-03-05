@@ -5,7 +5,7 @@
 ;; Author: Jim Porter
 ;; Version: 0.0.1-pre
 ;; Keywords: feed, rss
-;; Package-Requires: ((emacs "29.1") (elfeed))
+;; Package-Requires: ((emacs "27.1") (elfeed))
 
 ;; This file is NOT part of GNU Emacs.
 
@@ -60,8 +60,8 @@ This is a <link> tag, with a rel of either \"prev-archive\" or \"next\"."
 This detects WordPress feeds via the <generator> tag or the
 `:generator' meta key on the Elfeed feed object."
   (when (or (eq (elfeed-meta feed :generator) 'wordpress)
-            (when-let ((generator (xml-query* (rss channel generator *) xml))
-                       (genurl (url-generic-parse-url generator)))
+            (when-let* ((generator (xml-query* (rss channel generator *) xml))
+                        (genurl (url-generic-parse-url generator)))
               (member (url-host genurl) '("wordpress.com" "wordpress.org"))))
     (let* ((urlobj (url-generic-parse-url url))
            (path-and-query (url-path-and-query urlobj))
@@ -155,12 +155,12 @@ post older than SINCE, runs out of posts, or DEPTH reaches
                 (when (> depth 1)
                   (setf (elfeed-feed-title feed) original-title))
                 (elfeed-db-add entries)
-                (if-let (((< depth elfeed-paginate-max-pages))
-                         (last-entry (car (last entries)))
-                         ((or (null since)
-                              (< since (elfeed-entry-date last-entry))))
-                         (next-url (elfeed-paginate-next-page-url
-                                    url xml feed)))
+                (if-let* (((< depth elfeed-paginate-max-pages))
+                          (last-entry (car (last entries)))
+                          ((or (null since)
+                               (< since (elfeed-entry-date last-entry))))
+                          (next-url (elfeed-paginate-next-page-url
+                                     url xml feed)))
                     ;; Update the next page of the feed; never send the etag,
                     ;; since that's only for the newest page.
                     (elfeed-paginate--update-feed
