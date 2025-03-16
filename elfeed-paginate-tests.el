@@ -1,6 +1,6 @@
 ;;; elfeed-paginate-tests.el --- Tests for elfeed-paginate -*- lexical-binding: t -*-
 
-;; Copyright (C) 2024 Free Software Foundation, Inc.
+;; Copyright (C) 2024-2025 Jim Porter
 
 ;; Author: Jim Porter
 ;; URL: https://github.com/jimporter/elfeed-paginate

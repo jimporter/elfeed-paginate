@@ -1,6 +1,6 @@
 ;;; elfeed-paginate.el --- Paginate Elfeed feeds -*- lexical-binding: t -*-
 
-;; Copyright (C) 2024 Jim Porter
+;; Copyright (C) 2024-2025 Jim Porter
 
 ;; Author: Jim Porter
 ;; Version: 0.0.1-pre
